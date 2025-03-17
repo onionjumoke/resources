@@ -6,41 +6,8 @@
     <title>File Explorer</title>
     <style>
         body {
-            /* Replace with your preferred image URL */
-            background: url('<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Explorer</title>
-    <style>
-        body {
             background: url('resources.imgfiles.net/bg.png') repeat;
             background-size: auto;
-            font-family: "Lucida Grande", "Helvetica", sans-serif;
-            margin: 0;
-            padding: 20px;
-            min-height: 100%;
-        }
-
-        .window {
-            background: linear-gradient(to bottom, #f0f0f0, #d0d0d0);
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            width: 320px;
-            margin: 0 auto;
-            border: 1px solid #999;
-            overflow: hidden;
-        }
-
-        .titlebar {
-            background: linear-gradient(to bottom, #e5e5e5, #a0a0a0);
-            padding: 4px 10px;
-            border-bottom: 1px solid #888;
-            text-align: center;
-            font-size: 13px;
-            color') repeat;
-            background-size: auto; /* Keeps it compatible with older browsers */
             font-family: "Lucida Grande", "Helvetica", sans-serif;
             margin: 0;
             padding: 20px;
@@ -85,13 +52,30 @@
         .yellow { background: #ffbd2e; }
         .green { background: #27c940; }
 
+        .searchbar {
+            padding: 8px;
+            background: #fff;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .searchinput {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid #999;
+            border-radius: 12px;
+            font-size: 12px;
+            background: linear-gradient(to bottom, #fff, #f8f8f8);
+            -webkit-appearance: none; /* iOS 4 compatibility */
+            box-sizing: border-box; /* Ensures padding doesn't affect width */
+        }
+
         .filelist {
             padding: 10px;
             margin: 0;
             list-style: none;
             background: #fff;
             border-top: 1px solid #ccc;
-            max-height: 400px;
+            max-height: 350px;
             overflow-y: auto;
         }
 
@@ -122,19 +106,27 @@
             </div>
             File Explorer
         </div>
+        <div class="searchbar">
+            <input type="text" id="searchInput" class="searchinput" placeholder="Search files...">
+        </div>
         <ul id="fileList" class="filelist"></ul>
     </div>
 
     <script>
-        function populateFileList() {
+        // Sample file list (replace with server-side data in production)
+        var allFiles = [
+            'index.html',
+            'styles.css',
+            'script.js',
+            'image.png',
+            'document.pdf',
+            'about.html',
+            'contact.js'
+        ];
+
+        function populateFileList(files) {
             var fileList = document.getElementById('fileList');
-            var files = [
-                'index.html',
-                'styles.css',
-                'script.js',
-                'image.png',
-                'document.pdf'
-            ];
+            fileList.innerHTML = ''; // Clear existing list
 
             for (var i = 0; i < files.length; i++) {
                 var li = document.createElement('li');
@@ -147,7 +139,38 @@
             }
         }
 
-        window.onload = populateFileList;
+        function filterFiles() {
+            var searchInput = document.getElementById('searchInput').value.toLowerCase();
+            var filteredFiles = allFiles.filter(function(file) {
+                return file.toLowerCase().indexOf(searchInput) !== -1;
+            });
+            populateFileList(filteredFiles);
+        }
+
+        // Initialize with all files
+        window.onload = function() {
+            populateFileList(allFiles);
+            document.getElementById('searchInput').addEventListener('input', filterFiles);
+        };
+
+        // For server-side integration, you might use:
+        /*
+        function fetchFiles(searchTerm) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/dirlist?search=' + encodeURIComponent(searchTerm), true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    var files = JSON.parse(xhr.responseText);
+                    populateFileList(files);
+                }
+            };
+            xhr.send();
+        }
+
+        document.getElementById('searchInput').addEventListener('input', function() {
+            fetchFiles(this.value);
+        });
+        */
     </script>
 </body>
 </html>
