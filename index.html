@@ -1,176 +1,514 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Explorer</title>
-    <style>
-        body {
-            background: url('resources.imgfiles.net/bg.png') repeat;
-            background-size: auto;
-            font-family: "Lucida Grande", "Helvetica", sans-serif;
-            margin: 0;
-            padding: 20px;
-            min-height: 100%;
-        }
-
-        .window {
-            background: linear-gradient(to bottom, #f0f0f0, #d0d0d0);
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            width: 320px;
-            margin: 0 auto;
-            border: 1px solid #999;
-            overflow: hidden;
-        }
-
-        .titlebar {
-            background: linear-gradient(to bottom, #e5e5e5, #a0a0a0);
-            padding: 4px 10px;
-            border-bottom: 1px solid #888;
-            text-align: center;
-            font-size: 13px;
-            color: #333;
-            text-shadow: 0 1px 0 rgba(255,255,255,0.7);
-        }
-
-        .buttons {
-            float: left;
-            margin-top: 2px;
-        }
-
-        .button {
-            width: 12px;
-            height: 12px;
-            border-radius: 6px;
-            display: inline-block;
-            margin-right: 6px;
-            border: 1px solid rgba(0,0,0,0.4);
-        }
-
-        .red { background: #ff6050; }
-        .yellow { background: #ffbd2e; }
-        .green { background: #27c940; }
-
-        .searchbar {
-            padding: 8px;
-            background: #fff;
-            border-bottom: 1px solid #ccc;
-        }
-
-        .searchinput {
-            width: 100%;
-            padding: 6px 10px;
-            border: 1px solid #999;
-            border-radius: 12px;
-            font-size: 12px;
-            background: linear-gradient(to bottom, #fff, #f8f8f8);
-            -webkit-appearance: none; /* iOS 4 compatibility */
-            box-sizing: border-box; /* Ensures padding doesn't affect width */
-        }
-
-        .filelist {
-            padding: 10px;
-            margin: 0;
-            list-style: none;
-            background: #fff;
-            border-top: 1px solid #ccc;
-            max-height: 350px;
-            overflow-y: auto;
-        }
-
-        .fileitem {
-            padding: 4px 8px;
-            margin: 2px 0;
-            background: linear-gradient(to right, #fff, #f8f8f8);
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #333;
-            cursor: pointer;
-        }
-
-        .fileitem:hover {
-            background: linear-gradient(to right, #e8f1ff, #d8e1ff);
-            border-color: #b8c7ff;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Worsd</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Segoe UI, sans-serif;
+      background: linear-gradient(to bottom right, #dbefff, #a0c4ff);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      user-select: text;
+    }
+    .ribbon {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(8px);
+      box-shadow: inset 0 -1px 2px rgba(0,0,0,0.1);
+      border-bottom: 1px solid #a9c4e2;
+      width: 100%;
+      max-width: 960px;
+      user-select: none;
+    }
+    .group {
+      border-right: 1px solid #ccc;
+      padding: 10px;
+      margin-right: 10px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .group h4 {
+      margin: 5px 0 0 0;
+      font-size: 12px;
+      text-align: center;
+      user-select: none;
+      width: 100%;
+    }
+    .btn {
+      display: inline-block;
+      padding: 6px 12px;
+      background: #e3eefc;
+      border: 1px solid #aaa;
+      margin: 2px;
+      cursor: pointer;
+      border-radius: 4px;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+      user-select: none;
+      font-size: 12px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .btn:empty {
+      background-color: #e3eefc;
+    }
+    select, input[type="color"] {
+      margin: 2px 4px;
+      padding: 2px;
+      font-size: 13px;
+      user-select: auto;
+    }
+    .paper-container {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      overflow: auto;
+    }
+    .editor {
+      background: white;
+      width: 816px;
+      min-height: 1056px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      padding: 40px;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      font-family: Calibri, sans-serif;
+      font-size: 11pt;
+      line-height: 1.4;
+      box-sizing: border-box;
+    }
+    #editor {
+      width: 100%;
+      min-height: 100%;
+      border: none;
+      outline: none;
+      word-wrap: break-word;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      user-select: text;
+      cursor: text;
+    }
+    .actions {
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid #a9c4e2;
+      text-align: right;
+      width: 100%;
+      max-width: 960px;
+      user-select: none;
+    }
+    .actions button {
+      padding: 6px 12px;
+      margin-left: 10px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    #renameModal {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid #b5c4d7;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      padding: 0;
+      z-index: 1000;
+      display: none;
+      user-select: text;
+      border-radius: 5px;
+      width: 300px;
+      min-height: 150px;
+    }
+    #renameModal .title-bar {
+      background: linear-gradient(to bottom, #c0d0e0, #a0b0c0);
+      height: 25px;
+      border-bottom: 1px solid #a0a0a0;
+      border-top-left-radius: 4px;
+      border-top-right-radius: 4px;
+      padding-left: 5px;
+      color: white;
+      font-size: 12px;
+      line-height: 25px;
+      user-select: none;
+      cursor: move;
+    }
+    #renameModal .content {
+      padding: 15px;
+    }
+    #renameModal input {
+      margin-right: 10px;
+      font-size: 14px;
+      padding: 4px;
+      width: 100px;
+    }
+    #renameModal button {
+      margin-top: 10px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .window-buttons {
+      float: right;
+      margin-top: -22px;
+    }
+    .window-button {
+      width: 15px;
+      height: 15px;
+      display: inline-block;
+      margin-left: 2px;
+      cursor: pointer;
+    }
+    .window-button.minimize {
+      background: #ffea00;
+      border: 1px solid #d4c800;
+    }
+    .window-button.maximize {
+      background: #00ff00;
+      border: 1px solid #00c800;
+    }
+    .window-button.close {
+      background: #ff0000;
+      border: 1px solid #c80000;
+    }
+    #imgContextMenu {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      border: 1px solid #aaa;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      z-index: 2000;
+      display: none;
+      font-family: Segoe UI, sans-serif;
+      font-size: 13px;
+      user-select: none;
+      width: 150px;
+      border-radius: 4px;
+    }
+    #imgContextMenu div {
+      padding: 8px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    #imgContextMenu div:last-child {
+      border-bottom: none;
+    }
+    #imgContextMenu div:hover {
+      background-color: #dbefff;
+    }
+    #resizeInput {
+      width: 50px;
+      margin-left: 8px;
+    }
+    .text-small {
+      font-size: 10pt;
+    }
+    .text-medium {
+      font-size: 12pt;
+    }
+    .text-large {
+      font-size: 14pt;
+    }
+    .text-extra-large {
+      font-size: 18pt;
+    }
+  </style>
 </head>
 <body>
-    <div class="window">
-        <div class="titlebar">
-            <div class="buttons">
-                <span class="button red"></span>
-                <span class="button yellow"></span>
-                <span class="button green"></span>
-            </div>
-            File Explorer
-        </div>
-        <div class="searchbar">
-            <input type="text" id="searchInput" class="searchinput" placeholder="Search files...">
-        </div>
-        <ul id="fileList" class="filelist"></ul>
+  <div class="ribbon" onmousedown="preventFocusLoss(event)">
+    <div class="group">
+      <button class="btn" title="Paste" onclick="execCmd('paste')">📋</button>
+      <h4>Clipboard</h4>
     </div>
+    <div class="group">
+      <button class="btn" title="Bold" onclick="execCmd('bold')">𝐁𝐨𝐥𝐝</button>
+      <button class="btn" title="Italic" onclick="execCmd('italic')">𝑖𝑡𝑎𝑙𝑖𝑐</button>
+      <button class="btn" title="Underline" onclick="execCmd('underline')">a̲b̲c̲</button>
+      <h4>Formating</h4>
+    </div>
+    <div class="group">
+      <button class="btn" title="Left Align" onclick="execCmd('justifyLeft')">←¶</button>
+      <button class="btn" title="Center Align" onclick="execCmd('justifyCenter')">↕¶</button>
+      <button class="btn" title="Right Align" onclick="execCmd('justifyRight')">→¶</button>
+      <button class="btn" title="Justify" onclick="execCmd('justifyFull')">↔¶</button>
+      <h4>Paragraph</h4>
+    </div>
+    <div class="group">
+      <input id="colorPicker" type="color" title="Text color" onchange="execCmdArg('foreColor', this.value)" />
+      <h4>Color</h4>
+    </div>
+    <div class="group">
+      <input type="file" accept="image/*" onchange="insertImage(event)" />
+      <h4>Insert image</h4>
+    </div>
+    <div class="group">
+      <input id="paperColorPicker" type="color" title="Paper Color" onchange="changePaperColor(this.value)" />
+      <h4>Paper</h4>
+    </div>
+    <div class="group">
+      <select id="sizeSelect" title="Text Size" onchange="applyTextSize(this.value)" onmousedown="event.stopPropagation()">
+        <option value="">Default</option>
+        <option value="text-small">Tiny</option>
+        <option value="text-medium">Medium</option>
+        <option value="text-large">Big</option>
+        <option value="text-extra-large">Extra Large</option>
+      </select>
+      <h4>Size</h4>
+    </div>
+  </div>
 
-    <script>
-        // Sample file list (replace with server-side data in production)
-        var allFiles = [
-            'index.html',
-            'styles.css',
-            'script.js',
-            'image.png',
-            'document.pdf',
-            'about.html',
-            'contact.js'
-        ];
+  <div class="paper-container">
+    <div class="editor">
+      <div id="editor" contenteditable="true" spellcheck="true"></div>
+    </div>
+  </div>
 
-        function populateFileList(files) {
-            var fileList = document.getElementById('fileList');
-            fileList.innerHTML = ''; // Clear existing list
+  <div class="actions">
+    <button onclick="saveDocument()">Save as .html</button>
+  </div>
 
-            for (var i = 0; i < files.length; i++) {
-                var li = document.createElement('li');
-                li.className = 'fileitem';
-                li.innerHTML = files[i];
-                li.onclick = function() {
-                    alert('Clicked: ' + this.innerHTML);
-                };
-                fileList.appendChild(li);
-            }
+  <div id="renameModal">
+    <div class="title-bar">Rename</div>
+    <div class="content">
+      <label for="filename">File name:</label>
+      <input type="text" id="filename" value="document" />
+      <button onclick="saveWithFilename()">Save</button>
+      <button onclick="closeRenameDialog()">Cancel</button>
+    </div>
+    <div class="window-buttons">
+      <div class="window-button minimize"></div>
+      <div class="window-button maximize"></div>
+      <div class="window-button close" onclick="closeRenameDialog()"></div>
+    </div>
+  </div>
+
+  <div id="imgContextMenu">
+    <div id="resizeOption">Redimensionar (px): <input id="resizeInput" type="number" min="20" max="1000" /></div>
+    <div id="moveUpOption">Mover arriba</div>
+    <div id="moveDownOption">Mover abajo</div>
+    <div id="duplicateOption">Duplicar</div>
+    <div id="deleteOption" style="color: red;">Eliminar</div>
+  </div>
+
+  <script>
+    let savedSelection = null;
+    const editor = document.getElementById('editor');
+    const editorContainer = document.querySelector('.editor');
+    let currentImg = null;
+    let draggedModal = null;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    function saveSelection() {
+      const sel = window.getSelection();
+      if (sel.rangeCount > 0) savedSelection = sel.getRangeAt(0);
+    }
+
+    function restoreSelection() {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      if (savedSelection) sel.addRange(savedSelection);
+    }
+
+    function execCmd(command) {
+      restoreSelection();
+      document.execCommand(command, false, null);
+      saveSelection();
+      editor.focus();
+    }
+
+    function execCmdArg(command, arg) {
+      restoreSelection();
+      document.execCommand(command, false, arg);
+      saveSelection();
+      editor.focus();
+    }
+
+    function applyTextSize(sizeClass) {
+      restoreSelection();
+      const sel = window.getSelection();
+      if (sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        if (!range.collapsed) {
+          const span = document.createElement('span');
+          span.className = sizeClass || '';
+          if (range.commonAncestorContainer.nodeName === 'SPAN' && range.commonAncestorContainer.classList.contains(sizeClass)) return;
+          range.surroundContents(span);
+          editor.querySelectorAll('span span').forEach(nested => {
+            const parent = nested.parentElement;
+            parent.className = nested.className;
+            while (nested.firstChild) parent.insertBefore(nested.firstChild, nested);
+            nested.remove();
+          });
+        } else {
+          const span = document.createElement('span');
+          span.className = sizeClass || '';
+          range.insertNode(span);
+          range.selectNodeContents(span);
+          range.collapse(false);
         }
+      }
+      saveSelection();
+      updateSizeSelect();
+      editor.focus();
+    }
 
-        function filterFiles() {
-            var searchInput = document.getElementById('searchInput').value.toLowerCase();
-            var filteredFiles = allFiles.filter(function(file) {
-                return file.toLowerCase().indexOf(searchInput) !== -1;
-            });
-            populateFileList(filteredFiles);
+    function changePaperColor(color) {
+      editorContainer.style.backgroundColor = color;
+      editor.focus();
+    }
+
+    function showRenameDialog() {
+      const modal = document.getElementById('renameModal');
+      modal.style.display = 'block';
+      modal.style.left = '50%';
+      modal.style.top = '50%';
+      modal.style.transform = 'translate(-50%, -50%)';
+      document.getElementById('filename').focus();
+    }
+
+    function closeRenameDialog() {
+      document.getElementById('renameModal').style.display = 'none';
+    }
+
+    ['keyup', 'mouseup', 'mouseleave', 'focus', 'blur'].forEach(event => editor.addEventListener(event, saveSelection));
+    editor.addEventListener('keyup', () => { updateSizeSelect(); editor.focus(); });
+    editor.addEventListener('mouseup', () => { updateSizeSelect(); editor.focus(); });
+
+    function preventFocusLoss(e) {
+      if (e.target.tagName !== 'SELECT') e.preventDefault();
+    }
+
+    function updateSizeSelect() {
+      const sel = window.getSelection();
+      if (sel.rangeCount) {
+        let node = sel.focusNode;
+        if (node.nodeType === 3) node = node.parentElement;
+        while (node && node !== editor) {
+          if (node.nodeName === 'SPAN') {
+            const sizeClass = ['text-small', 'text-medium', 'text-large', 'text-extra-large'].find(cls => node.classList.contains(cls));
+            document.getElementById('sizeSelect').value = sizeClass || '';
+            return;
+          }
+          node = node.parentElement;
         }
+        document.getElementById('sizeSelect').value = '';
+      }
+    }
 
-        // Initialize with all files
-        window.onload = function() {
-            populateFileList(allFiles);
-            document.getElementById('searchInput').addEventListener('input', filterFiles);
+    function insertImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          restoreSelection();
+          document.execCommand('insertImage', false, e.target.result);
+          saveSelection();
+          editor.focus();
         };
+        reader.readAsDataURL(file);
+        event.target.value = null;
+      }
+    }
 
-        // For server-side integration, you might use:
-        /*
-        function fetchFiles(searchTerm) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/dirlist?search=' + encodeURIComponent(searchTerm), true);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState == 4 && xhr.status == 200) {
-                    var files = JSON.parse(xhr.responseText);
-                    populateFileList(files);
-                }
-            };
-            xhr.send();
+    function saveDocument() { downloadHTML('document'); }
+    function saveWithFilename() {
+      const name = document.getElementById('filename').value.trim() || 'documento';
+      downloadHTML(name);
+      closeRenameDialog();
+    }
+
+    function downloadHTML(filename) {
+      const content = editor.innerHTML;
+      const style = document.querySelector('style').innerHTML;
+      const paperColor = editorContainer.style.backgroundColor || 'white';
+      const html = `<!DOCTYPE html><html><head><meta charset='UTF-8'><style>${style}</style></head><body><div class='paper-container'><div class='editor' style='background-color: ${paperColor}'><div>${content}</div></div></div></body></html>`;
+      const blob = new Blob([html], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename + '.html';
+      a.click();
+    }
+
+    const imgContextMenu = document.getElementById('imgContextMenu');
+    editor.addEventListener('contextmenu', e => {
+      if (e.target.tagName === 'IMG') {
+        e.preventDefault();
+        currentImg = e.target;
+        imgContextMenu.style.top = e.pageY + 'px';
+        imgContextMenu.style.left = e.pageX + 'px';
+        imgContextMenu.style.display = 'block';
+        document.getElementById('resizeInput').value = currentImg.width;
+      } else {
+        imgContextMenu.style.display = 'none';
+        currentImg = null;
+      }
+    });
+
+    document.addEventListener('click', e => {
+      if (!imgContextMenu.contains(e.target)) {
+        imgContextMenu.style.display = 'none';
+        currentImg = null;
+      }
+    });
+
+    document.getElementById('resizeInput').addEventListener('change', () => {
+      if (currentImg) {
+        const val = parseInt(document.getElementById('resizeInput').value);
+        if (val >= 20 && val <= 1000) currentImg.style.width = val + 'px';
+      }
+    });
+
+    ['moveUpOption', 'moveDownOption', 'duplicateOption', 'deleteOption'].forEach(id => {
+      document.getElementById(id).addEventListener('click', () => {
+        if (!currentImg) return;
+        const actions = {
+          moveUpOption: () => { const prev = currentImg.previousSibling; if (prev) currentImg.parentNode.insertBefore(currentImg, prev); },
+          moveDownOption: () => { const next = currentImg.nextSibling; if (next) currentImg.parentNode.insertBefore(next, currentImg); },
+          duplicateOption: () => { const clone = currentImg.cloneNode(true); currentImg.parentNode.insertBefore(clone, currentImg.nextSibling); },
+          deleteOption: () => currentImg.parentNode.removeChild(currentImg)
+        };
+        actions[id]();
+        imgContextMenu.style.display = 'none';
+      });
+    });
+
+    ['renameModal'].forEach(id => {
+      const modal = document.getElementById(id);
+      modal.querySelector('.title-bar').addEventListener('mousedown', startDragging);
+
+      function startDragging(e) {
+        draggedModal = modal;
+        dragOffsetX = e.clientX - modal.offsetLeft;
+        dragOffsetY = e.clientY - modal.offsetTop;
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', stopDragging);
+      }
+
+      function drag(e) {
+        if (draggedModal) {
+          draggedModal.style.left = (e.clientX - dragOffsetX) + 'px';
+          draggedModal.style.top = (e.clientY - dragOffsetY) + 'px';
+          draggedModal.style.transform = 'none';
         }
+      }
 
-        document.getElementById('searchInput').addEventListener('input', function() {
-            fetchFiles(this.value);
-        });
-        */
-    </script>
+      function stopDragging() {
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('mouseup', stopDragging);
+        draggedModal = null;
+      }
+    });
+
+    editor.focus();
+    saveSelection();
+  </script>
 </body>
 </html>
