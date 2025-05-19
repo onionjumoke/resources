@@ -116,67 +116,81 @@
     }
     #renameModal {
       position: absolute;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border: 1px solid #b5c4d7;
-      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      background: #ffffff;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
       padding: 0;
       z-index: 1000;
       display: none;
       user-select: text;
-      border-radius: 5px;
-      width: 300px;
+      border-radius: 0;
+      width: 400px;
       min-height: 150px;
     }
     #renameModal .title-bar {
-      background: linear-gradient(to bottom, #c0d0e0, #a0b0c0);
-      height: 25px;
-      border-bottom: 1px solid #a0a0a0;
-      border-top-left-radius: 4px;
-      border-top-right-radius: 4px;
-      padding-left: 5px;
+      background: #005ea6;
+      height: 30px;
+      border-bottom: 1px solid #004080;
+      padding-left: 10px;
       color: white;
-      font-size: 12px;
-      line-height: 25px;
+      font-size: 14px;
+      line-height: 30px;
       user-select: none;
       cursor: move;
+      position: relative;
+    }
+    #renameModal .title-bar .close-btn {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 30px;
+      height: 30px;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 16px;
+      line-height: 30px;
+      text-align: center;
+      cursor: pointer;
+    }
+    #renameModal .title-bar .close-btn:hover {
+      background: #e81123;
     }
     #renameModal .content {
       padding: 15px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #renameModal label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
     }
     #renameModal input {
-      margin-right: 10px;
+      width: 100%;
       font-size: 14px;
-      padding: 4px;
-      width: 100px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 0;
+      box-sizing: border-box;
+    }
+    #renameModal .button-group {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
     }
     #renameModal button {
-      margin-top: 10px;
-      padding: 5px 10px;
+      padding: 5px 15px;
       cursor: pointer;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      background: #e5e5e5;
+      border-radius: 0;
     }
-    .window-buttons {
-      float: right;
-      margin-top: -22px;
-    }
-    .window-button {
-      width: 15px;
-      height: 15px;
-      display: inline-block;
-      margin-left: 2px;
-      cursor: pointer;
-    }
-    .window-button.minimize {
-      background: #ffea00;
-      border: 1px solid #d4c800;
-    }
-    .window-button.maximize {
-      background: #00ff00;
-      border: 1px solid #00c800;
-    }
-    .window-button.close {
-      background: #ff0000;
-      border: 1px solid #c80000;
+    #renameModal button:hover {
+      background: #d5d5d5;
     }
     #imgContextMenu {
       position: absolute;
@@ -271,30 +285,28 @@
   </div>
 
   <div class="actions">
-    <button onclick="saveDocument()">Save as .html</button>
+    <button onclick="showRenameDialog()">Save as .html</button>
   </div>
 
   <div id="renameModal">
-    <div class="title-bar">Save As</div>
+    <div class="title-bar">
+      Save As
+      <button class="close-btn" onclick="closeRenameDialog()">×</button>
+    </div>
     <div class="content">
       <label for="filename">File name:</label>
-      <input type="text" id="filename" value="document" />
-      <button onclick="saveWithFilename()">Save</button>
-      <button onclick="closeRenameDialog()">Cancel</button>
-    </div>
-    <div class="window-buttons">
-      <div class="window-button minimize"></div>
-      <div class="window-button maximize"></div>
-      <div class="window-button close" onclick="closeRenameDialog()"></div>
+      <input type="text" id="filename" value="document.html" />
+      <div class="button-group">
+        <button onclick="saveWithFilename()">Save</button>
+        <button onclick="closeRenameDialog()">Cancel</button>
+      </div>
     </div>
   </div>
 
   <div id="imgContextMenu">
-    <div id="resizeOption">Redimensionar (px): <input id="resizeInput" type="number" min="20" max="1000" /></div>
-    <div id="moveUpOption">Mover arriba</div>
-    <div id="moveDownOption">Mover abajo</div>
-    <div id="duplicateOption">Duplicar</div>
-    <div id="deleteOption" style="color: red;">Eliminar</div>
+    <div id="resizeOption">Resize (px): <input id="resizeInput" type="number" min="20" max="1000" /></div>
+    <div id="duplicateOption">Duplicate</div>
+    <div id="deleteOption" style="color: red;">Delete</div>
   </div>
 
   <script>
@@ -418,13 +430,11 @@
       }
     }
 
-    function saveDocument() {
-      showRenameDialog(); // Always prompt for filename before saving
-    }
-
     function saveWithFilename() {
-      const filename = document.getElementById('filename').value.trim() || 'document';
-      downloadHTML(filename);
+      let name = document.getElementById('filename').value.trim();
+      if (!name) name = 'document.html';
+      if (!name.endsWith('.html')) name += '.html';
+      downloadHTML(name);
       closeRenameDialog();
     }
 
@@ -433,45 +443,10 @@
       const style = document.querySelector('style').innerHTML;
       const paperColor = editorContainer.style.backgroundColor || 'white';
       const html = `<!DOCTYPE html><html><head><meta charset='UTF-8'><style>${style}</style></head><body><div class='paper-container'><div class='editor' style='background-color: ${paperColor}'><div>${content}</div></div></div></body></html>`;
-
-      // Check if running in an Electron/Nativefier environment
-      if (typeof window.process === 'object' && window.process.versions.electron) {
-        try {
-          const { dialog, app } = require('electron').remote;
-          const fs = require('fs');
-          const path = require('path');
-
-          // Prompt for save location
-          dialog.showSaveDialog({
-            title: 'Save HTML Document',
-            defaultPath: path.join(app.getPath('documents'), `${filename}.html`),
-            filters: [{ name: 'HTML Files', extensions: ['html'] }]
-          }).then(result => {
-            if (!result.canceled && result.filePath) {
-              fs.writeFileSync(result.filePath, html);
-              console.log('File saved successfully:', result.filePath);
-            }
-          }).catch(err => {
-            console.error('Error saving file:', err);
-            alert('Failed to save the file. Falling back to browser download.');
-            fallbackDownload(html, filename);
-          });
-        } catch (err) {
-          console.error('Electron save failed:', err);
-          alert('Electron save not available. Falling back to browser download.');
-          fallbackDownload(html, filename);
-        }
-      } else {
-        // Fallback for browser environment
-        fallbackDownload(html, filename);
-      }
-    }
-
-    function fallbackDownload(html, filename) {
       const blob = new Blob([html], { type: 'text/html' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = filename + '.html';
+      a.download = filename;
       a.click();
     }
 
@@ -523,6 +498,7 @@
       modal.querySelector('.title-bar').addEventListener('mousedown', startDragging);
 
       function startDragging(e) {
+        if (e.target.classList.contains('close-btn')) return;
         draggedModal = modal;
         dragOffsetX = e.clientX - modal.offsetLeft;
         dragOffsetY = e.clientY - modal.offsetTop;
