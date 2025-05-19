@@ -275,7 +275,7 @@
   </div>
 
   <div id="renameModal">
-    <div class="title-bar">Rename</div>
+    <div class="title-bar">Save As</div>
     <div class="content">
       <label for="filename">File name:</label>
       <input type="text" id="filename" value="document" />
@@ -418,10 +418,13 @@
       }
     }
 
-    function saveDocument() { downloadHTML('document'); }
+    function saveDocument() {
+      showRenameDialog(); // Always prompt for filename before saving
+    }
+
     function saveWithFilename() {
-      const name = document.getElementById('filename').value.trim() || 'documento';
-      downloadHTML(name);
+      const filename = document.getElementById('filename').value.trim() || 'document';
+      downloadHTML(filename);
       closeRenameDialog();
     }
 
@@ -430,6 +433,41 @@
       const style = document.querySelector('style').innerHTML;
       const paperColor = editorContainer.style.backgroundColor || 'white';
       const html = `<!DOCTYPE html><html><head><meta charset='UTF-8'><style>${style}</style></head><body><div class='paper-container'><div class='editor' style='background-color: ${paperColor}'><div>${content}</div></div></div></body></html>`;
+
+      // Check if running in an Electron/Nativefier environment
+      if (typeof window.process === 'object' && window.process.versions.electron) {
+        try {
+          const { dialog, app } = require('electron').remote;
+          const fs = require('fs');
+          const path = require('path');
+
+          // Prompt for save location
+          dialog.showSaveDialog({
+            title: 'Save HTML Document',
+            defaultPath: path.join(app.getPath('documents'), `${filename}.html`),
+            filters: [{ name: 'HTML Files', extensions: ['html'] }]
+          }).then(result => {
+            if (!result.canceled && result.filePath) {
+              fs.writeFileSync(result.filePath, html);
+              console.log('File saved successfully:', result.filePath);
+            }
+          }).catch(err => {
+            console.error('Error saving file:', err);
+            alert('Failed to save the file. Falling back to browser download.');
+            fallbackDownload(html, filename);
+          });
+        } catch (err) {
+          console.error('Electron save failed:', err);
+          alert('Electron save not available. Falling back to browser download.');
+          fallbackDownload(html, filename);
+        }
+      } else {
+        // Fallback for browser environment
+        fallbackDownload(html, filename);
+      }
+    }
+
+    function fallbackDownload(html, filename) {
       const blob = new Blob([html], { type: 'text/html' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
