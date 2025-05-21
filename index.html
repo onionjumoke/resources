@@ -98,6 +98,11 @@
       user-select: text;
       cursor: text;
     }
+    #editor iframe {
+      max-width: 100%;
+      border: 1px solid #ccc;
+      margin: 5px 0;
+    }
     .actions {
       padding: 10px;
       background: rgba(255, 255, 255, 0.7);
@@ -114,7 +119,7 @@
       cursor: pointer;
       font-size: 13px;
     }
-    #renameModal {
+    #renameModal, #embedModal, #linkModal, #imageLinkModal {
       position: absolute;
       background: #ffffff;
       border: 1px solid #ccc;
@@ -127,7 +132,7 @@
       width: 400px;
       min-height: 150px;
     }
-    #renameModal .title-bar {
+    .modal .title-bar {
       background: #005ea6;
       height: 30px;
       border-bottom: 1px solid #004080;
@@ -139,7 +144,7 @@
       cursor: move;
       position: relative;
     }
-    #renameModal .title-bar .close-btn {
+    .modal .title-bar .close-btn {
       position: absolute;
       right: 0;
       top: 0;
@@ -153,22 +158,22 @@
       text-align: center;
       cursor: pointer;
     }
-    #renameModal .title-bar .close-btn:hover {
+    .modal .title-bar .close-btn:hover {
       background: #e81123;
     }
-    #renameModal .content {
+    .modal .content {
       padding: 15px;
       background: #ffffff;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
-    #renameModal label {
+    .modal label {
       display: block;
       margin-bottom: 5px;
       font-size: 14px;
     }
-    #renameModal input {
+    .modal input {
       width: 100%;
       font-size: 14px;
       padding: 5px;
@@ -176,12 +181,12 @@
       border-radius: 0;
       box-sizing: border-box;
     }
-    #renameModal .button-group {
+    .modal .button-group {
       display: flex;
       justify-content: flex-end;
       gap: 10px;
     }
-    #renameModal button {
+    .modal button {
       padding: 5px 15px;
       cursor: pointer;
       font-size: 14px;
@@ -189,7 +194,7 @@
       background: #e5e5e5;
       border-radius: 0;
     }
-    #renameModal button:hover {
+    .modal button:hover {
       background: #d5d5d5;
     }
     #imgContextMenu {
@@ -248,10 +253,10 @@
       <h4>Formating</h4>
     </div>
     <div class="group">
-      <button class="btn" title="Left Align" onclick="execCmd('justifyLeft')">←¶</button>
-      <button class="btn" title="Center Align" onclick="execCmd('justifyCenter')">↕¶</button>
-      <button class="btn" title="Right Align" onclick="execCmd('justifyRight')">→¶</button>
-      <button class="btn" title="Justify" onclick="execCmd('justifyFull')">↔¶</button>
+      <button class="btn" title="Left Align" onclick="execCmd('justifyLeft')">←</button>
+      <button class="btn" title="Center Align" onclick="execCmd('justifyCenter')">↕</button>
+      <button class="btn" title="Right Align" onclick="execCmd('justifyRight')">→</button>
+      <button class="btn" title="Justify" onclick="execCmd('justifyFull')">↔</button>
       <h4>Paragraph</h4>
     </div>
     <div class="group">
@@ -259,8 +264,10 @@
       <h4>Color</h4>
     </div>
     <div class="group">
+      <button class="btn" title="Insert Embed" onclick="showEmbedDialog()">Embed</button>
+      <button class="btn" title="Insert Hyperlink" onclick="showLinkDialog()">Link</button>
       <input type="file" accept="image/*" onchange="insertImage(event)" />
-      <h4>Insert image</h4>
+      <h4>Insert</h4>
     </div>
     <div class="group">
       <input id="paperColorPicker" type="color" title="Paper Color" onchange="changePaperColor(this.value)" />
@@ -288,10 +295,10 @@
     <button onclick="showRenameDialog()">Save as .html</button>
   </div>
 
-  <div id="renameModal">
+  <div id="renameModal" class="modal">
     <div class="title-bar">
-      Save As (Will be saved on your Downloads folder)
-      <button class="close-btn" onclick="closeRenameDialog()">x</button>
+      Save As
+      <button class="close-btn" onclick="closeRenameDialog()">×</button>
     </div>
     <div class="content">
       <label for="filename">File name:</label>
@@ -303,12 +310,58 @@
     </div>
   </div>
 
+  <div id="embedModal" class="modal">
+    <div class="title-bar">
+      Insert Embed
+      <button class="close-btn" onclick="closeEmbedDialog()">×</button>
+    </div>
+    <div class="content">
+      <label for="embedUrl">Embed URL (e.g., YouTube embed link):</label>
+      <input type="text" id="embedUrl" placeholder="https://www.youtube.com/embed/..." />
+      <div class="button-group">
+        <button onclick="insertEmbed()">OK</button>
+        <button onclick="closeEmbedDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="linkModal" class="modal">
+    <div class="title-bar">
+      Insert Hyperlink
+      <button class="close-btn" onclick="closeLinkDialog()">×</button>
+    </div>
+    <div class="content">
+      <label for="linkUrl">URL:</label>
+      <input type="text" id="linkUrl" placeholder="https://example.com" />
+      <div class="button-group">
+        <button onclick="insertHyperlink()">OK</button>
+        <button onclick="closeLinkDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="imageLinkModal" class="modal">
+    <div class="title-bar">
+      Add/Edit Image Hyperlink
+      <button class="close-btn" onclick="closeImageLinkDialog()">×</button>
+    </div>
+    <div class="content">
+      <label for="imageLinkUrl">URL:</label>
+      <input type="text" id="imageLinkUrl" placeholder="https://example.com" />
+      <div class="button-group">
+        <button onclick="addImageHyperlink()">OK</button>
+        <button onclick="closeImageLinkDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div id="imgContextMenu">
-    <div id="resizeOption">Resize (px): <input id="resizeInput" type="number" min="20" max="1000" /></div>
-    <div id="moveUpOption">Move up</div>
-    <div id="moveDownOption">Move down</div>
-    <div id="duplicateOption">Duplicate</div>
-    <div id="deleteOption" style="color: red;">Delete</div>
+    <div id="hyperlinkOption">Add/Edit Hyperlink</div>
+    <div id="resizeOption">Redimensionar (px): <input id="resizeInput" type="number" min="20" max="1000" /></div>
+    <div id="moveUpOption">Mover arriba</div>
+    <div id="moveDownOption">Mover abajo</div>
+    <div id="duplicateOption">Duplicar</div>
+    <div id="deleteOption" style="color: red;">Eliminar</div>
   </div>
 
   <script>
@@ -322,13 +375,23 @@
 
     function saveSelection() {
       const sel = window.getSelection();
-      if (sel.rangeCount > 0) savedSelection = sel.getRangeAt(0);
+      if (sel.rangeCount > 0) {
+        savedSelection = sel.getRangeAt(0);
+      } else {
+        savedSelection = null;
+      }
     }
 
     function restoreSelection() {
       const sel = window.getSelection();
       sel.removeAllRanges();
-      if (savedSelection) sel.addRange(savedSelection);
+      if (savedSelection) {
+        try {
+          sel.addRange(savedSelection);
+        } catch (e) {
+          console.warn("Failed to restore selection:", e);
+        }
+      }
     }
 
     function execCmd(command) {
@@ -340,7 +403,10 @@
 
     function execCmdArg(command, arg) {
       restoreSelection();
-      document.execCommand(command, false, arg);
+      const success = document.execCommand(command, false, arg);
+      if (!success) {
+        console.warn(`Failed to execute ${command} with argument ${arg}`);
+      }
       saveSelection();
       editor.focus();
     }
@@ -379,6 +445,171 @@
       editor.focus();
     }
 
+    function showEmbedDialog() {
+      const modal = document.getElementById('embedModal');
+      modal.style.display = 'block';
+      modal.style.left = '50%';
+      modal.style.top = '50%';
+      modal.style.transform = 'translate(-50%, -50%)';
+      document.getElementById('embedUrl').value = '';
+      document.getElementById('embedUrl').focus();
+      saveSelection();
+    }
+
+    function closeEmbedDialog() {
+      document.getElementById('embedModal').style.display = 'none';
+      restoreSelection();
+      editor.focus();
+    }
+
+    function insertEmbed() {
+      const url = document.getElementById('embedUrl').value.trim();
+      if (url) {
+        restoreSelection();
+        const iframe = document.createElement('iframe');
+        iframe.width = '560';
+        iframe.height = '315';
+        iframe.src = url;
+        iframe.frameBorder = '0';
+        iframe.setAttribute('allowfullscreen', '');
+        
+        const sel = window.getSelection();
+        if (sel.rangeCount) {
+          const range = sel.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(iframe);
+          const br = document.createElement('br');
+          range.insertNode(br);
+          range.setStartAfter(iframe);
+          range.setEndAfter(iframe);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } else {
+          editor.appendChild(iframe);
+          editor.appendChild(document.createElement('br'));
+        }
+        saveSelection();
+        editor.focus();
+        closeEmbedDialog();
+      }
+    }
+
+    function showLinkDialog() {
+      const modal = document.getElementById('linkModal');
+      modal.style.display = 'block';
+      modal.style.left = '50%';
+      modal.style.top = '50%';
+      modal.style.transform = 'translate(-50%, -50%)';
+      document.getElementById('linkUrl').value = '';
+      document.getElementById('linkUrl').focus();
+      saveSelection();
+    }
+
+    function closeLinkDialog() {
+      document.getElementById('linkModal').style.display = 'none';
+      restoreSelection();
+      editor.focus();
+    }
+
+    function insertHyperlink() {
+      const url = document.getElementById('linkUrl').value.trim();
+      if (url) {
+        restoreSelection();
+        const sel = window.getSelection();
+        if (sel.rangeCount && !sel.isCollapsed) {
+          const success = document.execCommand('createLink', false, url);
+          if (!success) {
+            const range = sel.getRangeAt(0);
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+            range.surroundContents(a);
+          }
+        } else {
+          const a = document.createElement('a');
+          a.href = url;
+          a.target = '_blank';
+          a.textContent = url;
+          const range = sel.rangeCount ? sel.getRangeAt(0) : document.createRange();
+          range.insertNode(a);
+          range.setStartAfter(a);
+          range.setEndAfter(a);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        saveSelection();
+        editor.focus();
+        closeLinkDialog();
+      }
+    }
+
+    function showImageLinkDialog() {
+      const modal = document.getElementById('imageLinkModal');
+      modal.style.display = 'block';
+      modal.style.left = '50%';
+      modal.style.top = '50%';
+      modal.style.transform = 'translate(-50%, -50%)';
+      document.getElementById('imageLinkUrl').value = currentImg.parentElement.tagName === 'A' ? currentImg.parentElement.href : '';
+      document.getElementById('imageLinkUrl').focus();
+    }
+
+    function closeImageLinkDialog() {
+      document.getElementById('imageLinkModal').style.display = 'none';
+      imgContextMenu.style.display = 'none';
+      editor.focus();
+    }
+
+    function addImageHyperlink() {
+      if (!currentImg) return;
+      const url = document.getElementById('imageLinkUrl').value.trim();
+      if (url) {
+        if (currentImg.parentElement.tagName === 'A') {
+          currentImg.parentElement.href = url;
+        } else {
+          const link = document.createElement('a');
+          link.href = url;
+          link.target = '_blank';
+          currentImg.parentNode.insertBefore(link, currentImg);
+          link.appendChild(currentImg);
+        }
+      } else if (currentImg.parentElement.tagName === 'A') {
+        const parent = currentImg.parentElement;
+        parent.replaceWith(currentImg);
+      }
+      closeImageLinkDialog();
+    }
+
+    function insertImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          restoreSelection();
+          const sel = window.getSelection();
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          if (sel.rangeCount) {
+            const range = sel.getRangeAt(0);
+            range.deleteContents();
+            range.insertNode(img);
+            const br = document.createElement('br');
+            range.insertNode(br);
+            range.setStartAfter(img);
+            range.setEndAfter(img);
+            sel.removeAllRanges();
+            sel.addRange(range);
+          } else {
+            editor.appendChild(img);
+            editor.appendChild(document.createElement('br'));
+          }
+          saveSelection();
+          editor.focus();
+        };
+        reader.readAsDataURL(file);
+        event.target.value = null;
+      }
+    }
+
     function showRenameDialog() {
       const modal = document.getElementById('renameModal');
       modal.style.display = 'block';
@@ -414,21 +645,6 @@
           node = node.parentElement;
         }
         document.getElementById('sizeSelect').value = '';
-      }
-    }
-
-    function insertImage(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = e => {
-          restoreSelection();
-          document.execCommand('insertImage', false, e.target.result);
-          saveSelection();
-          editor.focus();
-        };
-        reader.readAsDataURL(file);
-        event.target.value = null;
       }
     }
 
@@ -474,6 +690,7 @@
       }
     });
 
+    document.getElementById('hyperlinkOption').addEventListener('click', showImageLinkDialog);
     document.getElementById('resizeInput').addEventListener('change', () => {
       if (currentImg) {
         const val = parseInt(document.getElementById('resizeInput').value);
@@ -495,7 +712,7 @@
       });
     });
 
-    ['renameModal'].forEach(id => {
+    ['renameModal', 'embedModal', 'linkModal', 'imageLinkModal'].forEach(id => {
       const modal = document.getElementById(id);
       modal.querySelector('.title-bar').addEventListener('mousedown', startDragging);
 
