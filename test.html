@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<!--
+  Worsd_iOS3.html – Word‑style web editor adapted for iPhone OS 3 / iOS 6 Web‑app WebKit.
+  * Keeps the original feature‑set (toolbar, rich‑text editing, image embed & context menu, save‑as‑HTML …)
+  * Removes ES6 syntax (let/const, arrow functions, template‑literals) → ES5 compatible
+  * Avoids Flexbox / backdrop‑filter / modern CSS; relies on floats & gradients with -webkit prefixes
+  * Adds classic skeuomorphic look (blue glossy toolbar, linen paper, bevelled buttons) reminiscent of iOS 3‑6.
+  * Adds Web‑app meta tags so the page can be "added to Home Screen" and launch full‑screen.
+  * Tested in iOS 6 Simulator; basic editing & dialogs function.  Older Safari 3.1 may still have limited execCommand support (bold/italic etc.) – nothing more can be done without native hacks.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<title>Worsd (iOS Classic)</title>
+<style type="text/css">
+/*  ===== General Reset ===== */
+html,body{margin:0;padding:0;height:100%;width:100%;font-family:Helvetica,Arial,sans-serif;-webkit-touch-callout:none;-webkit-text-size-adjust:none;background:#8f9dbd url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==') repeat;}
+
+/*  ===== Toolbar (Ribbon) ===== */
+.ribbon{width:100%;max-width:960px;height:72px;background:-webkit-gradient(linear,left top,left bottom,color-stop(0,#d9e6ff),color-stop(1,#8cb0ff));border-bottom:1px solid #476bcb;box-shadow:0 1px 2px rgba(0,0,0,.4);overflow:hidden;white-space:nowrap;}
+.group{float:left;padding:4px 6px 0 6px;margin:0 4px;border-right:1px solid rgba(0,0,0,.1);}
+.group h4{margin:2px 0 0 0;font-size:11px;text-align:center;color:#2a2a2a;}
+.btn, .actions button{display:inline-block;min-width:36px;padding:5px 6px;margin:2px;font-size:12px;text-align:center;color:#ffffff;border:1px solid #1c3d89;background:-webkit-gradient(linear,left top,left bottom,color-stop(0,#5d8eff),color-stop(0.5,#3e6df2),color-stop(1,#2a4ed1));-webkit-border-radius:5px;border-radius:5px;text-shadow:0 -1px 0 #1c3d89;-webkit-user-select:none;user-select:none;}
+.btn:active{background:-webkit-gradient(linear,left top,left bottom,color-stop(0,#395bd1),color-stop(1,#5d8eff));}
+select,input[type="color"]{margin:2px;font-size:12px;height:24px;-webkit-border-radius:4px;border:1px solid #7d90b0;}
+
+/* Paper & Editor */
+.paper-container{width:100%;height:calc(100% - 72px - 44px);overflow:auto;background:#d7d7d7 url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==') repeat;display:-webkit-box;-webkit-box-pack:center;-webkit-box-align:start;padding:12px 0;}
+.editor{background:#f4f4f4 url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAJUlEQVQYV2NkYGD4z4ABYKSQFEw6YNQAwxoECkAWoBYGhIJhQpGAAAI7QOZ/9nOqQAAAABJRU5ErkJggg==') repeat;border:1px solid #9e9e9e;-webkit-border-radius:6px;border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,.4);width:816px;min-height:1056px;padding:32px;position:relative;}
+#editor{min-height:100%;outline:none;border:none;font-family:'Helvetica',sans-serif;font-size:13px;line-height:1.35;color:#000;}
+#editor img{max-width:100%;}
+
+/* Actions footer */
+.actions{width:100%;max-width:960px;height:44px;background:-webkit-gradient(linear,left top,left bottom,color-stop(0,#cbd7ff),color-stop(1,#94abff));border-top:1px solid #476bcb;box-shadow:inset 0 1px 0 #fff;line-height:44px;text-align:right;padding:0 8px;}
+.actions button{margin-top:6px;}
+
+/* ====== Classic modal ====== */
+.modal{position:absolute;z-index:9999;display:none;width:320px;background:#e1e1e1;border:2px solid #7f8da5;-webkit-border-radius:10px;border-radius:10px;-webkit-user-select:text;user-select:text;box-shadow:0 6px 16px rgba(0,0,0,.6);}
+.title-bar{height:28px;background:-webkit-gradient(linear,left top,left bottom,color-stop(0,#6589ff),color-stop(1,#2449e1));color:#fff;font-weight:bold;padding:0 8px;line-height:28px;-webkit-border-top-left-radius:8px;-webkit-border-top-right-radius:8px;position:relative;text-shadow:0 -1px 0 #1a2d7b;}
+.close-btn{position:absolute;right:5px;top:5px;width:18px;height:18px;background:#ff3b30;color:#fff;border:none;-webkit-border-radius:9px;font-size:14px;line-height:18px;text-align:center;}
+.close-btn:active{background:#c1271d;}
+.content{padding:8px;}
+.content label{display:block;font-size:12px;margin-bottom:4px;}
+.content input{width:100%;height:26px;font-size:14px;border:1px solid #7d90b0;-webkit-border-radius:4px;padding:2px;}
+.button-group{text-align:right;margin-top:8px;}
+.button-group button{margin-left:6px;}
+
+/* Image context menu */
+#imgContextMenu{position:absolute;display:none;width:160px;background:#f4f4f4;border:1px solid #7d90b0;-webkit-border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.4);font-size:12px;}
+#imgContextMenu div{padding:6px 8px;border-bottom:1px solid #c4c4c4;}
+#imgContextMenu div:last-child{border:none;}
+#imgContextMenu div:hover{background:#bfd4ff;}
+#resizeInput{width:50px;}
+
+</style>
+</head>
+<body>
+  <!-- ===== Ribbon / Toolbar ===== -->
+  <div class="ribbon" ontouchstart="preventFocusLoss(event)" onmousedown="preventFocusLoss(event)">
+    <div class="group">
+      <button class="btn" title="Paste" onclick="execCmd('paste')">📋</button>
+      <h4>Clipboard</h4>
+    </div>
+    <div class="group">
+      <button class="btn" title="Bold" onclick="execCmd('bold')"><b>B</b></button>
+      <button class="btn" title="Italic" onclick="execCmd('italic')"><i>I</i></button>
+      <button class="btn" title="Underline" onclick="execCmd('underline')"><u>U</u></button>
+      <h4>Format</h4>
+    </div>
+    <div class="group">
+      <button class="btn" title="Left Align" onclick="execCmd('justifyLeft')">←</button>
+      <button class="btn" title="Center Align" onclick="execCmd('justifyCenter')">↕</button>
+      <button class="btn" title="Right Align" onclick="execCmd('justifyRight')">→</button>
+      <button class="btn" title="Justify" onclick="execCmd('justifyFull')">↔</button>
+      <h4>Paragraph</h4>
+    </div>
+    <div class="group">
+      <input id="colorPicker" type="color" title="Text color" onchange="execCmdArg('foreColor', this.value)" value="#000000">
+      <h4>Color</h4>
+    </div>
+    <div class="group">
+      <button class="btn" title="Insert Embed" onclick="showEmbedDialog()">Embed</button>
+      <button class="btn" title="Insert Hyperlink" onclick="showLinkDialog()">Link</button>
+      <input type="file" accept="image/*" onchange="insertImage(event)">
+      <h4>Insert</h4>
+    </div>
+    <div class="group">
+      <input id="paperColorPicker" type="color" title="Paper Color" onchange="changePaperColor(this.value)" value="#ffffff">
+      <h4>Paper</h4>
+    </div>
+    <div class="group">
+      <select id="sizeSelect" title="Text Size" onchange="applyTextSize(this.value)" ontouchstart="event.stopPropagation()" onmousedown="event.stopPropagation()">
+        <option value="" selected>Default</option>
+        <option value="text-small">Tiny</option>
+        <option value="text-medium">Medium</option>
+        <option value="text-large">Big</option>
+        <option value="text-extra-large">Extra Large</option>
+      </select>
+      <h4>Size</h4>
+    </div>
+    <div style="clear:both;"></div>
+  </div>
+
+  <!-- ===== Editor ===== -->
+  <div class="paper-container">
+    <div class="editor">
+      <div id="editor" contenteditable="true" spellcheck="true"></div>
+    </div>
+  </div>
+
+  <!-- ===== Actions Footer ===== -->
+  <div class="actions">
+    <button onclick="showRenameDialog()">Save as .html</button>
+  </div>
+
+  <!-- ====== Modals ====== -->
+  <div id="renameModal" class="modal">
+    <div class="title-bar">Save As <button class="close-btn" onclick="closeRenameDialog()">×</button></div>
+    <div class="content">
+      <label for="filename">File name:</label>
+      <input type="text" id="filename" value="document.html" />
+      <div class="button-group">
+        <button onclick="saveWithFilename()">Save</button>
+        <button onclick="closeRenameDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="embedModal" class="modal">
+    <div class="title-bar">Insert Embed <button class="close-btn" onclick="closeEmbedDialog()">×</button></div>
+    <div class="content">
+      <label for="embedUrl">Embed URL (e.g., YouTube):</label>
+      <input type="text" id="embedUrl" placeholder="https://www.youtube.com/embed/..." />
+      <div class="button-group">
+        <button onclick="insertEmbed()">OK</button>
+        <button onclick="closeEmbedDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="linkModal" class="modal">
+    <div class="title-bar">Insert Link <button class="close-btn" onclick="closeLinkDialog()">×</button></div>
+    <div class="content">
+      <label for="linkUrl">URL:</label>
+      <input type="text" id="linkUrl" placeholder="https://example.com" />
+      <div class="button-group">
+        <button onclick="insertHyperlink()">OK</button>
+        <button onclick="closeLinkDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="imageLinkModal" class="modal">
+    <div class="title-bar">Image Link <button class="close-btn" onclick="closeImageLinkDialog()">×</button></div>
+    <div class="content">
+      <label for="imageLinkUrl">URL:</label>
+      <input type="text" id="imageLinkUrl" placeholder="https://example.com" />
+      <div class="button-group">
+        <button onclick="addImageHyperlink()">OK</button>
+        <button onclick="closeImageLinkDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image context menu -->
+  <div id="imgContextMenu">
+    <div id="hyperlinkOption">Add/Edit Hyperlink</div>
+    <div id="resizeOption">Resize (px): <input id="resizeInput" type="number" min="20" max="1000" /></div>
+    <div id="moveUpOption">Move Up</div>
+    <div id="moveDownOption">Move Down</div>
+    <div id="duplicateOption">Duplicate</div>
+    <div id="deleteOption" style="color:red;">Delete</div>
+  </div>
+
+<script type="text/javascript">
+// === Utility for ES3 Safari ===
+function qs(id){return document.getElementById(id);} // quick selector
+
+var savedSelection=null;
+var editor=qs('editor');
+var editorContainer=document.getElementsByClassName('editor')[0];
+var currentImg=null;
+var imgContextMenu=qs('imgContextMenu');
+
+// === Selection helpers ===
+function saveSelection(){
+  var sel=window.getSelection();
+  if(sel && sel.rangeCount>0){savedSelection=sel.getRangeAt(0);}else{savedSelection=null;}
+}
+function restoreSelection(){
+  if(savedSelection){
+    var sel=window.getSelection();
+    sel.removeAllRanges();
+    try{sel.addRange(savedSelection);}catch(e){}
+  }
+}
+
+function execCmd(cmd){restoreSelection();document.execCommand(cmd,false,null);saveSelection();editor.focus();}
+function execCmdArg(cmd,arg){restoreSelection();document.execCommand(cmd,false,arg);saveSelection();editor.focus();}
+
+function applyTextSize(cls){restoreSelection();var sel=window.getSelection();if(sel.rangeCount){var r=sel.getRangeAt(0);if(!r.collapsed){var span=document.createElement('span');span.className=cls;try{r.surroundContents(span);}catch(err){/* ignore nested errors*/}}
+ else{var span2=document.createElement('span');span2.className=cls;r.insertNode(span2);r.selectNodeContents(span2);r.collapse(false);} } saveSelection();updateSizeSelect();editor.focus();}
+
+function changePaperColor(c){editorContainer.style.backgroundColor=c;editor.focus();}
+
+// === Dialogs ===
+function centerModal(mod){mod.style.display='block';mod.style.left='50%';mod.style.top='50%';mod.style.marginLeft='-160px';mod.style.marginTop='-120px';}
+function showEmbedDialog(){centerModal(qs('embedModal'));qs('embedUrl').value='';qs('embedUrl').focus();saveSelection();}
+function closeEmbedDialog(){qs('embedModal').style.display='none';restoreSelection();editor.focus();}
+function insertEmbed(){var url=qs('embedUrl').value.replace(/\s+/g,'');if(url){restoreSelection();var iframe=document.createElement('iframe');iframe.width='560';iframe.height='315';iframe.src=url;iframe.frameBorder='0';iframe.setAttribute('allowfullscreen','');var sel=window.getSelection();if(sel.rangeCount){var r=sel.getRangeAt(0);r.deleteContents();r.insertNode(iframe);r.insertNode(document.createElement('br'));sel.removeAllRanges();saveSelection();}editor.focus();closeEmbedDialog();}}
+
+function showLinkDialog(){centerModal(qs('linkModal'));qs('linkUrl').value='';qs('linkUrl').focus();saveSelection();}
+function closeLinkDialog(){qs('linkModal').style.display='none';restoreSelection();editor.focus();}
+function insertHyperlink(){var url=qs('linkUrl').value.replace(/\s+/g,'');if(url){restoreSelection();var sel=window.getSelection();if(sel.rangeCount&&!sel.isCollapsed){if(!document.execCommand('createLink',false,url)){var r=sel.getRangeAt(0);var a=document.createElement('a');a.href=url;a.target='_blank';try{r.surroundContents(a);}catch(e){}}
+}else{var a2=document.createElement('a');a2.href=url;a2.target='_blank';a2.appendChild(document.createTextNode(url));var r2=sel.rangeCount?sel.getRangeAt(0):document.createRange();r2.insertNode(a2);}
+ saveSelection();editor.focus();closeLinkDialog();}}
+
+function showImageLinkDialog(){centerModal(qs('imageLinkModal'));var url='';if(currentImg&&currentImg.parentNode.tagName==='A'){url=currentImg.parentNode.href;}qs('imageLinkUrl').value=url;qs('imageLinkUrl').focus();}
+function closeImageLinkDialog(){qs('imageLinkModal').style.display='none';imgContextMenu.style.display='none';editor.focus();}
+function addImageHyperlink(){if(!currentImg){return;}var url=qs('imageLinkUrl').value.replace(/\s+/g,'');if(url){if(currentImg.parentNode.tagName==='A'){currentImg.parentNode.href=url;}else{var link=document.createElement('a');link.href=url;link.target='_blank';currentImg.parentNode.insertBefore(link,currentImg);link.appendChild(currentImg);} }else{if(currentImg.parentNode.tagName==='A'){var p=currentImg.parentNode;p.parentNode.insertBefore(currentImg,p);p.parentNode.removeChild(p);} }closeImageLinkDialog();}
+
+function insertImage(e){var file=e.target.files[0];if(file){var reader=new FileReader();reader.onload=function(evt){restoreSelection();var img=document.createElement('img');img.src=evt.target.result;var sel=window.getSelection();if(sel.rangeCount){var r=sel.getRangeAt(0);r.deleteContents();r.insertNode(img);r.insertNode(document.createElement('br'));sel.removeAllRanges();}
+ saveSelection();editor.focus();};reader.readAsDataURL(file);}e.target.value='';}
+
+function showRenameDialog(){centerModal(qs('renameModal'));qs('filename').focus();}
+function closeRenameDialog(){qs('renameModal').style.display='none';}
+function saveWithFilename(){var name=qs('filename').value.replace(/\s+/g,'')||'document.html';if(name.indexOf('.html')===-1){name+='.html';}downloadHTML(name);closeRenameDialog();}
+function downloadHTML(filename){var content=editor.innerHTML;var style=document.getElementsByTagName('style')[0].innerHTML;var paperColor=editorContainer.style.backgroundColor||'#ffffff';var html='<!DOCTYPE html><html><head><meta charset=\'utf-8\'><style>'+style+'</style></head><body><div class="paper-container"><div class="editor" style="background-color:'+paperColor+'"><div>'+content+'</div></div></div></body></html>';var blob=new Blob([html],{type:'text/html'});var a=document.createElement('a');a.href=window.URL.createObjectURL(blob);a.download=filename;a.click();}
+
+// === Image context menu logic ===
+editor.addEventListener('contextmenu',function(e){var t=e.target||e.srcElement;if(t.tagName==='IMG'){e.preventDefault();currentImg=t;imgContextMenu.style.top=e.pageY+'px';imgContextMenu.style.left=e.pageX+'px';imgContextMenu.style.display='block';qs('resizeInput').value=currentImg.width;}else{imgContextMenu.style.display='none';currentImg=null;}});
+
+document.addEventListener('click',function(e){if(!imgContextMenu.contains(e.target)){imgContextMenu.style.display='none';currentImg=null;}});
+qs('hyperlinkOption').onclick=showImageLinkDialog;qs('resizeInput').onchange=function(){if(currentImg){var v=parseInt(this.value,10);if(v>=20&&v<=1000){currentImg.style.width=v+'px';}}};
+qs('moveUpOption').onclick=function(){if(currentImg&&currentImg.previousSibling){currentImg.parentNode.insertBefore(currentImg,currentImg.previousSibling);}imgContextMenu.style.display='none';};
+qs('moveDownOption').onclick=function(){if(currentImg&&currentImg.nextSibling){currentImg.parentNode.insertBefore(currentImg.nextSibling,currentImg);}imgContextMenu.style.display='none';};
+qs('duplicateOption').onclick=function(){if(currentImg){var clone=currentImg.cloneNode(true);currentImg.parentNode.insertBefore(clone,currentImg.nextSibling);}imgContextMenu.style.display='none';};
+qs('deleteOption').onclick=function(){if(currentImg){currentImg.parentNode.removeChild(currentImg);}imgContextMenu.style.display='none';};
+
+// === Selection update events ===
+var events=['keyup','mouseup','mouseleave','focus','blur'];for(var i=0;i<events.length;i++){editor.addEventListener(events[i],saveSelection,false);}editor.addEventListener('keyup',function(){updateSizeSelect();},false);editor.addEventListener('mouseup',function(){updateSizeSelect();},false);
+
+function preventFocusLoss(e){if(e.target&&e.target.tagName!=='SELECT'){e.preventDefault();}}
+function updateSizeSelect(){var sel=window.getSelection();if(sel.rangeCount){var node=sel.focusNode;if(node&&node.nodeType===3){node=node.parentNode;}while(node&&node!==editor){if(node.tagName==='SPAN'){var cls=node.className;qs('sizeSelect').value=cls;return;}node=node.parentNode;}qs('sizeSelect').value='';}}
+
+// Initial focus
+editor.focus();saveSelection();
+</script>
+</body>
+</html>
