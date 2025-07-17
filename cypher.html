@@ -1,0 +1,212 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cifrador Simple</title>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #e6f3ff, #b3d9ff);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #005566;
+        }
+        h2 {
+            font-size: 1.5em;
+            color: #004d40;
+        }
+        textarea, input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #f5f5f5;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 1em;
+            color: #333;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #0078d7;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 1em;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #005ba1;
+        }
+        .reference-table {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+            background-color: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .reference-table div {
+            background-color: #fff;
+            color: #333;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 5px;
+            border-radius: 6px;
+            position: absolute;
+            z-index: 1;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cifrador Simple</h1>
+        <p>Codifica o decodifica texto usando el cifrado A=1, B=2, ..., Z=26. Los números de dos dígitos se separan (por ejemplo, AMA = 1 13 1).</p>
+        
+        <h2>Codificar Texto</h2>
+        <textarea id="encodeInput" placeholder="Ingresa texto para codificar (por ejemplo, AMA)" rows="4"></textarea>
+        <button onclick="encodeText()">Codificar</button>
+        <input type="text" id="encodeOutput" readonly placeholder="Resultado codificado">
+        <button class="tooltip" onclick="copyToClipboard('encodeOutput')">
+            Copiar
+            <span class="tooltiptext">Copiar al portapapeles</span>
+        </button>
+        
+        <h2>Decodificar Números</h2>
+        <textarea id="decodeInput" placeholder="Ingresa números para decodificar (por ejemplo, 1 13 1)" rows="4"></textarea>
+        <button onclick="decodeText()">Decodificar</button>
+        <input type="text" id="decodeOutput" readonly placeholder="Resultado decodificado">
+        <button class="tooltip" onclick="copyToClipboard('decodeOutput')">
+            Copiar
+            <span class="tooltiptext">Copiar al portapapeles</span>
+        </button>
+        
+        <h2>Tabla de Referencia</h2>
+        <div class="reference-table">
+            <div>A = 1</div><div>B = 2</div><div>C = 3</div><div>D = 4</div><div>E = 5</div><div>F = 6</div><div>G = 7</div>
+            <div>H = 8</div><div>I = 9</div><div>J = 10</div><div>K = 11</div><div>L = 12</div><div>M = 13</div><div>N = 14</div>
+            <div>O = 15</div><div>P = 16</div><div>Q = 17</div><div>R = 18</div><div>S = 19</div><div>T = 20</div><div>U = 21</div>
+            <div>V = 22</div><div>W = 23</div><div>X = 24</div><div>Y = 25</div><div>Z = 26</div>
+        </div>
+    </div>
+
+    <script>
+        function encodeText() {
+            const input = document.getElementById('encodeInput').value.toUpperCase();
+            let output = '';
+            for (let char of input) {
+                if (/[A-Z]/.test(char)) {
+                    const num = char.charCodeAt(0) - 64; // A=65 in ASCII, so A=1
+                    output += num + ' ';
+                }
+            }
+            document.getElementById('encodeOutput').value = output.trim();
+        }
+
+        function decodeText() {
+            const input = document.getElementById('decodeInput').value.trim();
+            const numbers = input.split(/\s+/).map(num => parseInt(num));
+            let output = '';
+            for (let num of numbers) {
+                if (num >= 1 && num <= 26) {
+                    output += String.fromCharCode(64 + num); // Convert back to letter
+                } else {
+                    output = '¡Número inválido detectado!';
+                    break;
+                }
+            }
+            document.getElementById('decodeOutput').value = output;
+        }
+
+        function copyToClipboard(elementId) {
+            const output = document.getElementById(elementId);
+            output.select();
+            document.execCommand('copy');
+            alert('¡Copiado al portapapeles!');
+        }
+
+        // Live encoding/decoding
+        document.getElementById('encodeInput').addEventListener('input', encodeText);
+        document.getElementById('decodeInput').addEventListener('input', decodeText);
+    </script>
+</body>
+</html>
